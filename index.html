@@ -63,11 +63,11 @@
     </div>
 
     <div class="category-nav">
-        <button class="btn-tab active" onclick="filterCategory('all')">Tất cả tài liệu</button>
-        <button class="btn-tab" onclick="filterCategory('tailieu')">📄 Tài liệu / Sách</button>
-        <button class="btn-tab" onclick="filterCategory('hinhanh')">🖼️ Hình ảnh</button>
-        <button class="btn-tab" onclick="filterCategory('video')">🎬 Video</button>
-        <button class="btn-tab" onclick="filterCategory('khac')">📦 File Nén / Khác</button>
+        <button class="btn-tab active" onclick="filterCategory('all', this)">Tất cả tài liệu</button>
+        <button class="btn-tab" onclick="filterCategory('tailieu', this)">📄 Tài liệu / Sách</button>
+        <button class="btn-tab" onclick="filterCategory('hinhanh', this)">🖼️ Hình ảnh</button>
+        <button class="btn-tab" onclick="filterCategory('video', this)">🎬 Video</button>
+        <button class="btn-tab" onclick="filterCategory('khac', this)">📦 File Nén / Khác</button>
     </div>
 
     <h2 class="section-title" id="current-category-title">Tất cả tài liệu</h2>
@@ -180,10 +180,12 @@
         noResults.style.display = hasItems ? 'none' : 'block';
     }
 
-    function filterCategory(category) {
+    function filterCategory(category, buttonElement) {
         currentCategory = category;
         document.querySelectorAll('.btn-tab').forEach(tab => tab.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        if (buttonElement) {
+            buttonElement.classList.add('active');
+        }
         const titles = { 'all': 'Tất cả tài liệu', 'tailieu': '📄 Tài liệu / Sách', 'hinhanh': '🖼️ Hình ảnh', 'video': '🎬 Video', 'khac': '📦 File Nén / Khác' };
         document.getElementById('current-category-title').innerText = titles[category];
         renderFiles();
