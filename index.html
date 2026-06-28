@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kho Dữ Liệu Cá Nhân</title>
+    <title>Hệ thống Lưu trữ & Tìm kiếm Dữ liệu Cá nhân</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f4f6f9; color: #333; padding: 20px; line-height: 1.6; }
@@ -12,23 +12,13 @@
         header h1 { font-size: 24px; margin-bottom: 10px; }
         .search-box { margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; }
         .search-box input { width: 100%; padding: 12px 20px; font-size: 16px; border: none; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); outline: none; }
-
-        /* Token setup box */
-        .token-setup { background: #fff8e1; border: 1px solid #f39c12; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        .token-setup label { font-weight: 600; color: #e67e22; }
-        .token-setup input[type="password"] { flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        .btn-save-token { background: #e67e22; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-save-token:hover { background: #d35400; }
-        .token-ok { color: #27ae60; font-weight: bold; font-size: 14px; }
-
         .upload-section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px; }
         .upload-group { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
         .upload-section input[type="file"] { padding: 8px; border: 1px dashed #3498db; border-radius: 6px; cursor: pointer; background: #f8fbfe; }
         .upload-section select { padding: 10px; border-radius: 6px; border: 1px solid #ddd; outline: none; }
-        .btn-upload-now { background-color: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-upload-now { background-color: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-upload-now:hover { background-color: #27ae60; }
         .status-msg { font-size: 14px; font-weight: bold; color: #e67e22; word-break: break-all; }
-
         .category-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         .btn-tab { background-color: #fff; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s; color: #555; }
         .btn-tab.active, .btn-tab:hover { background-color: #1e3c72; color: white; border-color: #1e3c72; }
@@ -43,10 +33,11 @@
         .file-info h3 { font-size: 15px; margin-bottom: 8px; word-break: break-all; color: #2c3e50; }
         .file-meta { font-size: 12px; color: #7f8c8d; margin-bottom: 15px; }
         .btn-download { display: inline-block; text-align: center; background-color: #2c3e50; color: white; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; }
-        .msg-center { text-align: center; padding: 40px; background: white; border-radius: 8px; color: #7f8c8d; grid-column: 1 / -1; }
+        .no-results { text-align: center; padding: 40px; background: white; border-radius: 8px; color: #7f8c8d; display: none; grid-column: 1 / -1; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <header>
         <h1>Kho Dữ Liệu Cá Nhân Của Tôi</h1>
@@ -55,14 +46,6 @@
             <input type="text" id="searchInput" placeholder="Nhập tên tài liệu để tìm nhanh...">
         </div>
     </header>
-
-    <!-- Nhập token 1 lần, lưu vào localStorage -->
-    <div class="token-setup" id="tokenSetup">
-        <label>🔑 GitHub Token:</label>
-        <input type="password" id="tokenInput" placeholder="Dán GitHub token vào đây...">
-        <button class="btn-save-token" onclick="saveToken()">Lưu Token</button>
-        <span id="tokenStatus"></span>
-    </div>
 
     <div class="upload-section">
         <h3 style="font-size: 16px; color: #1e3c72;">📤 Tải file mới lên trang web</h3>
@@ -80,150 +63,104 @@
     </div>
 
     <div class="category-nav">
-        <button class="btn-tab active" onclick="filterCategory('all', this)">Tất cả tài liệu</button>
-        <button class="btn-tab" onclick="filterCategory('tailieu', this)">📄 Tài liệu / Sách</button>
-        <button class="btn-tab" onclick="filterCategory('hinhanh', this)">🖼️ Hình ảnh</button>
-        <button class="btn-tab" onclick="filterCategory('video', this)">🎬 Video</button>
-        <button class="btn-tab" onclick="filterCategory('khac', this)">📦 File Nén / Khác</button>
+        <button class="btn-tab active" onclick="filterCategory('all')">Tất cả tài liệu</button>
+        <button class="btn-tab" onclick="filterCategory('tailieu')">📄 Tài liệu / Sách</button>
+        <button class="btn-tab" onclick="filterCategory('hinhanh')">🖼️ Hình ảnh</button>
+        <button class="btn-tab" onclick="filterCategory('video')">🎬 Video</button>
+        <button class="btn-tab" onclick="filterCategory('khac')">📦 File Nén / Khác</button>
     </div>
 
     <h2 class="section-title" id="current-category-title">Tất cả tài liệu</h2>
+    
     <div class="grid-files" id="filesGrid">
-        <div class="msg-center">⏳ Đang tải danh sách file...</div>
+        <div class="no-results" id="noResults">Không tìm thấy tài liệu nào phù hợp.</div>
     </div>
 </div>
 
 <script>
-    const CLOUD_NAME    = "dqlzqkcix";
+    const CLOUD_NAME = "dqlzqkcix";
     const UPLOAD_PRESET = "document";
-    const GITHUB_REPO   = "luongquocdn/luongquocdn.github.io";
-    const DATA_FILE     = "data.json";
 
-    let fileData = [];
+    let fileData = JSON.parse(localStorage.getItem('my_shared_files')) || [
+        {
+            title: "Tài liệu mẫu hướng dẫn ban đầu.pdf",
+            size: "1.2 MB",
+            category: "tailieu",
+            date: "2026-06-28",
+            url: "#"
+        }
+    ];
+
     let currentCategory = 'all';
 
-    function getToken() {
-        return localStorage.getItem('gh_token') || '';
-    }
+    function uploadFileToCloud() {
+        const fileInput = document.getElementById('fileChooser');
+        const statusText = document.getElementById('uploadStatus');
+        const category = document.getElementById('fileCategory').value;
 
-    function saveToken() {
-        const t = document.getElementById('tokenInput').value.trim();
-        if (!t) { alert('Vui lòng nhập token!'); return; }
-        localStorage.setItem('gh_token', t);
-        document.getElementById('tokenStatus').innerHTML = '<span class="token-ok">✅ Đã lưu!</span>';
-        document.getElementById('tokenInput').value = '';
-        showTokenUI();
-        loadFromGitHub();
-    }
-
-    function showTokenUI() {
-        const setup = document.getElementById('tokenSetup');
-        const token = getToken();
-        if (token) {
-            setup.innerHTML = `<span class="token-ok">🔑 Token đã lưu</span> &nbsp; <button onclick="clearToken()" style="background:#e74c3c;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:13px;">Đổi token</button>`;
-        }
-    }
-
-    function clearToken() {
-        localStorage.removeItem('gh_token');
-        location.reload();
-    }
-
-    async function loadFromGitHub() {
-        const token = getToken();
-        if (!token) {
-            document.getElementById('filesGrid').innerHTML = '<div class="msg-center">⚠️ Vui lòng nhập GitHub Token ở trên để tải danh sách file.</div>';
+        if (fileInput.files.length === 0) {
+            statusText.style.color = "#e74c3c";
+            statusText.innerText = "❌ Vui lòng chọn một file trước!";
             return;
         }
-        try {
-            const res = await fetch(
-                `https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,
-                { headers: { Authorization: `token ${token}`, 'Cache-Control': 'no-cache' } }
-            );
-            if (!res.ok) throw new Error('Lỗi đọc file: ' + res.status);
-            const json = await res.json();
-            fileData = JSON.parse(atob(json.content.replace(/\n/g, '')));
-        } catch (e) {
-            fileData = [];
-            console.error(e);
-        }
-        renderFiles();
-    }
-
-    async function saveToGitHub() {
-        const token = getToken();
-        const getRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,
-            { headers: { Authorization: `token ${token}` } }
-        );
-        const getJson = await getRes.json();
-
-        await fetch(
-            `https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE}`,
-            {
-                method: 'PUT',
-                headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: 'Update data.json',
-                    content: btoa(unescape(encodeURIComponent(JSON.stringify(fileData, null, 2)))),
-                    sha: getJson.sha
-                })
-            }
-        );
-    }
-
-    async function uploadFileToCloud() {
-        const fileInput  = document.getElementById('fileChooser');
-        const statusText = document.getElementById('uploadStatus');
-        const category   = document.getElementById('fileCategory').value;
-
-        if (!getToken()) { statusText.style.color="#e74c3c"; statusText.innerText="❌ Chưa có token!"; return; }
-        if (!fileInput.files.length) { statusText.style.color="#e74c3c"; statusText.innerText="❌ Chọn file trước!"; return; }
 
         const file = fileInput.files[0];
         statusText.style.color = "#e67e22";
-        statusText.innerText = "🔄 Đang tải lên Cloudinary...";
+        statusText.innerText = "🔄 Đang tải file lên đám mây... Vui lòng đợi...";
 
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
 
-        try {
-            const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (!data.secure_url) throw new Error(data.error?.message || 'Upload thất bại');
+        fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.secure_url) {
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+                const today = new Date().toISOString().split('T')[0];
 
-            statusText.innerText = "💾 Đang lưu danh sách lên GitHub...";
+                const newFile = {
+                    title: file.name,
+                    size: fileSizeMB,
+                    category: category,
+                    date: today,
+                    url: data.secure_url
+                };
 
-            fileData.unshift({
-                title:    file.name,
-                size:     (file.size / (1024 * 1024)).toFixed(1) + " MB",
-                category: category,
-                date:     new Date().toISOString().split('T')[0],
-                url:      data.secure_url
-            });
-
-            await saveToGitHub();
-            statusText.style.color = "#2ecc71";
-            statusText.innerText = "✅ Tải lên thành công! Danh sách đã được lưu.";
-            fileInput.value = "";
-            renderFiles();
-        } catch (err) {
+                fileData.unshift(newFile);
+                localStorage.setItem('my_shared_files', JSON.stringify(fileData));
+                
+                statusText.style.color = "#2ecc71";
+                statusText.innerText = "✅ Tải lên thành công!";
+                fileInput.value = "";
+                renderFiles();
+            } else {
+                statusText.style.color = "#e74c3c";
+                statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Xác thực thất bại");
+            }
+        })
+        .catch(err => {
+            console.error(err);
             statusText.style.color = "#e74c3c";
-            statusText.innerText = "❌ Lỗi: " + err.message;
-        }
+            statusText.innerText = "❌ Kết nối thất bại!";
+        });
     }
 
     function renderFiles() {
-        const grid   = document.getElementById('filesGrid');
-        const search = document.getElementById('searchInput').value.toLowerCase().trim();
-        grid.innerHTML = '';
+        const grid = document.getElementById('filesGrid');
+        const noResults = document.getElementById('noResults');
+        const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+        
+        grid.querySelectorAll('.file-card').forEach(card => card.remove());
         let hasItems = false;
-        const catNames = { tailieu:"📄 Tài liệu", hinhanh:"🖼️ Hình ảnh", video:"🎬 Video", khac:"📦 Khác" };
 
         fileData.forEach(file => {
-            if ((currentCategory === 'all' || file.category === currentCategory) && file.title.toLowerCase().includes(search)) {
+            if ((currentCategory === 'all' || file.category === currentCategory) && file.title.toLowerCase().includes(searchInput)) {
                 hasItems = true;
+                let catName = file.category === 'tailieu' ? "📄 Tài liệu" : file.category === 'hinhanh' ? "🖼️ Hình ảnh" : file.category === 'video' ? "🎬 Video" : "📦 Khác";
                 const card = document.createElement('div');
                 card.className = `file-card ${file.category}`;
                 card.innerHTML = `
@@ -231,7 +168,7 @@
                         <h3>${file.title}</h3>
                         <div class="file-meta">
                             <div>Dung lượng: <b>${file.size}</b></div>
-                            <div>Chuyên mục: <b>${catNames[file.category]||'📦 Khác'}</b></div>
+                            <div>Chuyên mục: <b>${catName}</b></div>
                             <div>Ngày: ${file.date}</div>
                         </div>
                     </div>
@@ -240,25 +177,20 @@
                 grid.appendChild(card);
             }
         });
-
-        if (!hasItems) {
-            grid.innerHTML = '<div class="msg-center">Không tìm thấy tài liệu nào.</div>';
-        }
+        noResults.style.display = hasItems ? 'none' : 'block';
     }
 
-    function filterCategory(category, btn) {
+    function filterCategory(category) {
         currentCategory = category;
-        document.querySelectorAll('.btn-tab').forEach(t => t.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        const titles = { all:'Tất cả tài liệu', tailieu:'📄 Tài liệu / Sách', hinhanh:'🖼️ Hình ảnh', video:'🎬 Video', khac:'📦 File Nén / Khác' };
+        document.querySelectorAll('.btn-tab').forEach(tab => tab.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        const titles = { 'all': 'Tất cả tài liệu', 'tailieu': '📄 Tài liệu / Sách', 'hinhanh': '🖼️ Hình ảnh', 'video': '🎬 Video', 'khac': '📦 File Nén / Khác' };
         document.getElementById('current-category-title').innerText = titles[category];
         renderFiles();
     }
 
     document.getElementById('searchInput').addEventListener('input', renderFiles);
-
-    showTokenUI();
-    loadFromGitHub();
+    renderFiles();
 </script>
 </body>
 </html>
