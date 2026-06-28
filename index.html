@@ -41,7 +41,7 @@
 <div class="container">
     <header>
         <h1>Kho Dữ Liệu Cá Nhân Của Tôi</h1>
-        <p>Hệ thống quản lý, tìm kiếm và tự động tải lên đám mây trực tiếp</p>
+        <p>Hệ thống quản lý, tìm kiếm và tự động đồng bộ đám mây trực tiếp</p>
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Nhập tên tài liệu để tìm nhanh...">
         </div>
@@ -81,17 +81,49 @@
     const CLOUD_NAME = "dqlzqkcix";
     const UPLOAD_PRESET = "document";
 
-    let fileData = JSON.parse(localStorage.getItem('my_shared_files')) || [
-        {
-            title: "Tài liệu mẫu hướng dẫn ban đầu.pdf",
-            size: "1.2 MB",
-            category: "tailieu",
-            date: "2026-06-28",
-            url: "#"
-        }
-    ];
-
+    let fileData = [];
     let currentCategory = 'all';
+
+    // Hàm tự động tải danh sách file đã có trên Cloudinary về giao diện web khi tải trang
+    function fetchCloudinaryFiles() {
+        const statusText = document.getElementById('uploadStatus');
+        statusText.style.color = "#3498db";
+        statusText.innerText = "🔄 Đang đồng bộ danh sách dữ liệu từ đám mây...";
+
+        // Gọi tới danh sách tệp dựa trên tag mặc định của preset
+        fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`)
+        .then(response => {
+            if(!response.ok) throw new Error("Chưa có file nào hoặc Resource List bị chặn.");
+            return response.json();
+        })
+        .then(data => {
+            fileData = data.resources.map(resource => {
+                // Tự động phân loại chuyên mục dựa trên đuôi file
+                let ext = resource.format.toLowerCase();
+                let cat = 'khac';
+                if(['jpg','png','jpeg','gif','webp'].includes(ext)) cat = 'hinhanh';
+                else if(['mp4','mkv','avi','mov'].includes(ext)) cat = 'video';
+                else if(['pdf','docx','doc','xlsx','txt'].includes(ext)) cat = 'tailieu';
+
+                return {
+                    title: `${resource.public_id}.${resource.format}`,
+                    size: (resource.bytes / (1024 * 1024)).toFixed(2) + " MB",
+                    category: cat,
+                    date: resource.created_at.split('T')[0],
+                    url: `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${resource.public_id}.${resource.format}`
+                };
+            });
+            statusText.style.color = "#2ecc71";
+            statusText.innerText = "✅ Đồng bộ dữ liệu đám mây hoàn tất!";
+            renderFiles();
+        })
+        .catch(err => {
+            console.log(err);
+            statusText.style.color = "#7f8c8d";
+            statusText.innerText = "Kho lưu trữ đám mây trống hoặc chưa cập nhật tệp.";
+            renderFiles();
+        });
+    }
 
     function uploadFileToCloud() {
         const fileInput = document.getElementById('fileChooser');
@@ -111,6 +143,7 @@
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('tags', UPLOAD_PRESET); // Gắn tag trùng với preset để hàm list quét được dữ liệu
 
         fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
             method: 'POST',
@@ -119,24 +152,11 @@
         .then(response => response.json())
         .then(data => {
             if (data.secure_url) {
-                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
-                const today = new Date().toISOString().split('T')[0];
-
-                const newFile = {
-                    title: file.name,
-                    size: fileSizeMB,
-                    category: category,
-                    date: today,
-                    url: data.secure_url
-                };
-
-                fileData.unshift(newFile);
-                localStorage.setItem('my_shared_files', JSON.stringify(fileData));
-                
                 statusText.style.color = "#2ecc71";
-                statusText.innerText = "✅ Tải lên thành công!";
+                statusText.innerText = "✅ Tải lên thành công! Đang cập nhật lại...";
                 fileInput.value = "";
-                renderFiles();
+                // Đợi 2 giây cho Cloudinary xử lý và cập nhật danh sách mới
+                setTimeout(fetchCloudinaryFiles, 2000);
             } else {
                 statusText.style.color = "#e74c3c";
                 statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Xác thực thất bại");
@@ -183,16 +203,16 @@
     function filterCategory(category, buttonElement) {
         currentCategory = category;
         document.querySelectorAll('.btn-tab').forEach(tab => tab.classList.remove('active'));
-        if (buttonElement) {
-            buttonElement.classList.add('active');
-        }
+        if (buttonElement) buttonElement.classList.add('active');
         const titles = { 'all': 'Tất cả tài liệu', 'tailieu': '📄 Tài liệu / Sách', 'hinhanh': '🖼️ Hình ảnh', 'video': '🎬 Video', 'khac': '📦 File Nén / Khác' };
         document.getElementById('current-category-title').innerText = titles[category];
         renderFiles();
     }
 
     document.getElementById('searchInput').addEventListener('input', renderFiles);
-    renderFiles();
+    
+    // Khởi chạy đồng bộ danh sách file từ đám mây khi mở trang web
+    fetchCloudinaryFiles();
 </script>
 </body>
 </html>
