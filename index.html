@@ -20,7 +20,7 @@
         .upload-section select { padding: 10px; border-radius: 6px; border: 1px solid #ddd; outline: none; }
         .btn-upload-now { background-color: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-upload-now:hover { background-color: #27ae60; }
-        .status-msg { font-size: 14px; font-weight: bold; color: #e67e22; }
+        .status-msg { font-size: 14px; font-weight: bold; color: #e67e22; word-break: break-all; }
 
         .category-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         .btn-tab { background-color: #fff; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s; color: #555; }
@@ -118,35 +118,37 @@
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
 
-        // Gọi API gửi file
-        fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+        // Gọi API gửi file trực tiếp ở chế độ tự động nhận diện định dạng (/auto/upload)
+        fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
             method: 'POST',
             body: formData
         })
         .then(response => response.json())
         .then(data => {
             if (data.secure_url) {
+                // Tính dung lượng file gọn gàng
                 const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
                 const today = new Date().toISOString().split('T')[0];
 
+                // Tạo đối tượng file mới
                 const newFile = {
                     title: file.name,
                     size: fileSizeMB,
                     category: category,
                     date: today,
-                    url: data.secure_url
+                    url: data.secure_url // Link truy cập trực tiếp từ Cloudinary
                 };
 
-                fileData.unshift(newFile);
-                localStorage.setItem('my_shared_files', JSON.stringify(fileData));
+                fileData.unshift(newFile); // Đẩy lên đầu danh sách hiển thị
+                localStorage.setItem('my_shared_files', JSON.stringify(fileData)); // Lưu vào trình duyệt
                 
                 statusText.style.color = "#2ecc71";
                 statusText.innerText = "✅ Tải lên thành công!";
-                fileInput.value = "";
-                renderFiles();
+                fileInput.value = ""; // Reset khung chọn file về trống
+                renderFiles(); // Cập nhật lại giao diện ngay lập tức
             } else {
                 statusText.style.color = "#e74c3c";
-                statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Không xác định");
+                statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Xác thực thất bại");
             }
         })
         .catch(err => {
