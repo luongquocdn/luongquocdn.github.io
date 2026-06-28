@@ -81,9 +81,9 @@
 </div>
 
 <script>
-    // --- CẤU HÌNH THÔNG TIN CLOUDINARY CỦA BẠN TẠI ĐÂY ---
-    const CLOUD_NAME = "dqlzqkclx";
-    const UPLOAD_PRESET = "luu_tru_file";
+    // --- CẤU HÌNH THÔNG TIN CLOUDINARY CHÍNH XÁC ---
+    const CLOUD_NAME = "dqlzqkcix"; // Đã sửa từ chữ l thành chữ i ngắn chuẩn xác
+    const UPLOAD_PRESET = "document"; // Tên preset Unsigned bằng chữ của bạn
 
     // Danh sách dữ liệu file lưu trữ cục bộ trong trình duyệt (Local Storage) để không bị mất khi F5
     let fileData = JSON.parse(localStorage.getItem('my_shared_files')) || [
@@ -126,26 +126,24 @@
         .then(response => response.json())
         .then(data => {
             if (data.secure_url) {
-                // Tính dung lượng file gọn gàng
                 const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
                 const today = new Date().toISOString().split('T')[0];
 
-                // Tạo đối tượng file mới
                 const newFile = {
                     title: file.name,
                     size: fileSizeMB,
                     category: category,
                     date: today,
-                    url: data.secure_url // Link truy cập trực tiếp từ Cloudinary
+                    url: data.secure_url
                 };
 
-                fileData.unshift(newFile); // Đẩy lên đầu danh sách hiển thị
-                localStorage.setItem('my_shared_files', JSON.stringify(fileData)); // Lưu vào trình duyệt
+                fileData.unshift(newFile);
+                localStorage.setItem('my_shared_files', JSON.stringify(fileData));
                 
                 statusText.style.color = "#2ecc71";
                 statusText.innerText = "✅ Tải lên thành công!";
-                fileInput.value = ""; // Reset khung chọn file về trống
-                renderFiles(); // Cập nhật lại giao diện ngay lập tức
+                fileInput.value = "";
+                renderFiles();
             } else {
                 statusText.style.color = "#e74c3c";
                 statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Xác thực thất bại");
