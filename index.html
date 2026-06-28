@@ -110,12 +110,6 @@
             return;
         }
 
-        if (UPLOAD_PRESET === "TÊN_UPLOAD_PRESET_CỦA_BẠN") {
-            statusText.style.color = "#e67e22";
-            statusText.innerText = "⚠️ Bạn chưa thay đổi tên UPLOAD_PRESET trong mã nguồn!";
-            return;
-        }
-
         const file = fileInput.files[0];
         statusText.style.color = "#e67e22";
         statusText.innerText = "🔄 Đang tải file lên đám mây... Vui lòng đợi...";
@@ -132,26 +126,24 @@
         .then(response => response.json())
         .then(data => {
             if (data.secure_url) {
-                // Đổi dung lượng byte sang MB cho dễ nhìn
                 const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
                 const today = new Date().toISOString().split('T')[0];
 
-                // Thêm dữ liệu mới vào mảng dữ liệu
                 const newFile = {
                     title: file.name,
                     size: fileSizeMB,
                     category: category,
                     date: today,
-                    url: data.secure_url // Đường dẫn tải/xem trực tiếp từ Cloudinary
+                    url: data.secure_url
                 };
 
-                fileData.unshift(newFile); // Đẩy lên đầu danh sách
-                localStorage.setItem('my_shared_files', JSON.stringify(fileData)); // Lưu vào bộ nhớ trình duyệt
+                fileData.unshift(newFile);
+                localStorage.setItem('my_shared_files', JSON.stringify(fileData));
                 
                 statusText.style.color = "#2ecc71";
                 statusText.innerText = "✅ Tải lên thành công!";
-                fileInput.value = ""; // Reset nút chọn file
-                renderFiles(); // Vẽ lại danh sách file mới
+                fileInput.value = "";
+                renderFiles();
             } else {
                 statusText.style.color = "#e74c3c";
                 statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Không xác định");
