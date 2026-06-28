@@ -12,6 +12,16 @@
         header h1 { font-size: 24px; margin-bottom: 10px; }
         .search-box { margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; }
         .search-box input { width: 100%; padding: 12px 20px; font-size: 16px; border: none; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); outline: none; }
+        
+        /* Khu vực giao diện Upload */
+        .upload-section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px; }
+        .upload-group { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .upload-section input[type="file"] { padding: 8px; border: 1px dashed #3498db; border-radius: 6px; cursor: pointer; background: #f8fbfe; }
+        .upload-section select { padding: 10px; border-radius: 6px; border: 1px solid #ddd; outline: none; }
+        .btn-upload-now { background-color: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-upload-now:hover { background-color: #27ae60; }
+        .status-msg { font-size: 14px; font-weight: bold; color: #e67e22; }
+
         .category-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         .btn-tab { background-color: #fff; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s; color: #555; }
         .btn-tab.active, .btn-tab:hover { background-color: #1e3c72; color: white; border-color: #1e3c72; }
@@ -34,11 +44,26 @@
 <div class="container">
     <header>
         <h1>Kho Dữ Liệu Cá Nhân Của Tôi</h1>
-        <p>Hệ thống quản lý, tìm kiếm và phân loại tài liệu thông minh</p>
+        <p>Hệ thống quản lý, tìm kiếm và tự động tải lên đám mây trực tiếp</p>
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Nhập tên tài liệu để tìm nhanh...">
         </div>
     </header>
+
+    <div class="upload-section">
+        <h3 style="font-size: 16px; color: #1e3c72;">📤 Tải file mới lên trang web</h3>
+        <div class="upload-group">
+            <input type="file" id="fileChooser">
+            <select id="fileCategory">
+                <option value="tailieu">📄 Tài liệu / Sách</option>
+                <option value="hinhanh">🖼️ Hình ảnh</option>
+                <option value="video">🎬 Video</option>
+                <option value="khac">📦 Khác</option>
+            </select>
+            <button class="btn-upload-now" onclick="uploadFileToCloud()">Bắt đầu tải lên</button>
+            <span class="status-msg" id="uploadStatus"></span>
+        </div>
+    </div>
 
     <div class="category-nav">
         <button class="btn-tab active" onclick="filterCategory('all')">Tất cả tài liệu</button>
@@ -56,33 +81,88 @@
 </div>
 
 <script>
-    // --- KHU VỰC THÊM QUẢN LÝ FILE CỦA BẠN ---
-    // Mỗi khi có file mới, bạn chỉ cần copy thêm 1 dòng vào đây
-    const fileData = [
+    // --- CẤU HÌNH THÔNG TIN CLOUDINARY CỦA BẠN TẠI ĐÂY ---
+    const CLOUD_NAME = "dqlzqkclx";
+    const UPLOAD_PRESET = "TÊN_UPLOAD_PRESET_CỦA_BẠN";
+
+    // Danh sách dữ liệu file lưu trữ cục bộ trong trình duyệt (Local Storage) để không bị mất khi F5
+    let fileData = JSON.parse(localStorage.getItem('my_shared_files')) || [
         {
-            title: "Sách giáo trình thiết kế web căn bản nâng cao.pdf",
-            size: "14.5 MB",
+            title: "Tài liệu mẫu hướng dẫn ban đầu.pdf",
+            size: "1.2 MB",
             category: "tailieu",
-            date: "2026-06-15",
-            url: "DÁN_LINK_CHIA_SẺ_GOOGLE_DRIVE_VÀO_ĐÂY"
-        },
-        {
-            title: "Ảnh chụp kỷ niệm gia đình ngày tết 2026.jpg",
-            size: "4.2 MB",
-            category: "hinhanh",
-            date: "2026-06-20",
-            url: "DÁN_LINK_ẢNH_VÀO_ĐÂY"
-        },
-        {
-            title: "Video khóa học Tiếng Anh giao tiếp bài 1.mp4",
-            size: "125 MB",
-            category: "video",
-            date: "2026-06-25",
-            url: "DÁN_LINK_VIDEO_VÀO_ĐÂY"
+            date: "2026-06-28",
+            url: "#"
         }
     ];
 
     let currentCategory = 'all';
+
+    // Hàm xử lý đẩy file lên thẳng Cloudinary
+    function uploadFileToCloud() {
+        const fileInput = document.getElementById('fileChooser');
+        const statusText = document.getElementById('uploadStatus');
+        const category = document.getElementById('fileCategory').value;
+
+        if (fileInput.files.length === 0) {
+            statusText.style.color = "#e74c3c";
+            statusText.innerText = "❌ Vui lòng chọn một file trước!";
+            return;
+        }
+
+        if (UPLOAD_PRESET === "TÊN_UPLOAD_PRESET_CỦA_BẠN") {
+            statusText.style.color = "#e67e22";
+            statusText.innerText = "⚠️ Bạn chưa thay đổi tên UPLOAD_PRESET trong mã nguồn!";
+            return;
+        }
+
+        const file = fileInput.files[0];
+        statusText.style.color = "#e67e22";
+        statusText.innerText = "🔄 Đang tải file lên đám mây... Vui lòng đợi...";
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+
+        // Gọi API gửi file
+        fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.secure_url) {
+                // Đổi dung lượng byte sang MB cho dễ nhìn
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+                const today = new Date().toISOString().split('T')[0];
+
+                // Thêm dữ liệu mới vào mảng dữ liệu
+                const newFile = {
+                    title: file.name,
+                    size: fileSizeMB,
+                    category: category,
+                    date: today,
+                    url: data.secure_url // Đường dẫn tải/xem trực tiếp từ Cloudinary
+                };
+
+                fileData.unshift(newFile); // Đẩy lên đầu danh sách
+                localStorage.setItem('my_shared_files', JSON.stringify(fileData)); // Lưu vào bộ nhớ trình duyệt
+                
+                statusText.style.color = "#2ecc71";
+                statusText.innerText = "✅ Tải lên thành công!";
+                fileInput.value = ""; // Reset nút chọn file
+                renderFiles(); // Vẽ lại danh sách file mới
+            } else {
+                statusText.style.color = "#e74c3c";
+                statusText.innerText = "❌ Lỗi: " + (data.error ? data.error.message : "Không xác định");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            statusText.style.color = "#e74c3c";
+            statusText.innerText = "❌ Kết nối thất bại!";
+        });
+    }
 
     function renderFiles() {
         const grid = document.getElementById('filesGrid');
